@@ -1,0 +1,3 @@
+mediapipe>=0.8.10
+opencv-python>=4.5.5.64
+phycv>=1.2.2
