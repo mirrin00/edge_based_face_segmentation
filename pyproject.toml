@@ -1,0 +1,22 @@
+[project]
+name = "edge_based_face_segmentation"
+version = "0.0.1"
+authors = [
+  { name="mirrin00", email="mirrin1905@outlook.com" },
+]
+description = "Package for finding points belonging to the open part of the face using edge-based segmentation"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "mediapipe>=0.8.10",
+  "opencv-python>=4.5.5.64",
+  "phycv>=1.2.2"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mirrin00/edge_based_face_segmentation"

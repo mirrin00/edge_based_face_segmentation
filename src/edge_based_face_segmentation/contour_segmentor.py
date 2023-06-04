@@ -5,12 +5,10 @@ from collections import deque
 import logging
 from .frame_info import FrameInfo
 from .processing_object_wrapper import ProcessingObjectWrapper
-from ..chunk import ReaderChunk
 from .processing_objects import Constants, MediapipeProcessingObject, RemoveNoiseProcessingObject, \
     PhyCVProcessingObject, MorphProcessingObject, WatershedProcessingObject, FindCountoursProcessingObject, \
     FindMainContourProcessingObject, CreateContourInfoProcessingObject, CreateResultPointsInfoProcessingObject, \
     AnalyzeContoursProcessingObject, ResizeProcessingObject
-# import classes.edge_segmentation.processing_functions as pf
 
 
 class ContourSegmentor:
@@ -39,7 +37,6 @@ class ContourSegmentor:
     def __init__(self, chunk_queue: ThreadQueue or None, output_landmarks_queue: ThreadQueue or None,
                  use_processes: bool = False, gpu_device: str or None = None, maxsize=1, chunk_size=30):
         self.functions = []
-        # self.pst = phycv.PST() if gpu_device is None else phycv.PST_GPU(torch.device(gpu_device))
         self.gpu_device = gpu_device
         self.is_process = use_processes
         self.pst_all_params = {
@@ -99,16 +96,16 @@ class ContourSegmentor:
                 self.output_landmarks.put(list(output_lms))
             self.chunk_queue.task_done()
 
-    def process_chunk(self, chunk: ReaderChunk) -> list[tuple[int, int]]:
-        chunk_len = len(chunk.frames_list)
+    def process_chunk(self, frames_list) -> list[tuple[int, int]]:
+        chunk_len = len(frames_list)
         start_range = min(self.max_queue_size, chunk_len)
         result_points = []
         for i in range(start_range):
-            frame_info = FrameInfo(chunk.frames_list[i])
+            frame_info = FrameInfo(frames_list[i])
             # frame_info.skip = True
             self.__put_to_queue(frame_info)
         for i in range(start_range, chunk_len):
-            frame_info = FrameInfo(chunk.frames_list[i])
+            frame_info = FrameInfo(frames_list[i])
             # frame_info.skip = True
             self.__put_to_queue(frame_info)
             frame_info: FrameInfo = self.__get_from_queue()
@@ -146,27 +143,6 @@ class ContourSegmentor:
                 (CreateResultPointsInfoProcessingObject, {})
             ], is_process=self.is_process, maxlen=self.max_queue_size),
         ]
-        # self.functions = [
-        #     FunctionWrapper("mediapipe", funcs=[
-        #         (pf.get_mediapipe_points, {"face_detector": self.face_detector, "offsets": self.default_offset, "coeff": self.default_offset_coeff}),
-        #         (pf.preprocessing_remove_noise, {}),
-        #     ], is_process=self.is_process, maxlen=self.max_queue_size),
-        #     FunctionWrapper("phycv", funcs=[
-        #         (pf.process_with_phycv, {"pst": self.pst, "init_params": self.pst_init_params, "apply_params": self.pst_apply_params})
-        #     ], is_process=self.is_process, maxlen=self.max_queue_size),
-        #     FunctionWrapper("watershed+contours", funcs=[
-        #         (pf.watershed, {}),
-        #         (pf.apply_morph, {}),
-        #         (pf.draw_contours, {}),
-        #         (pf.get_cont_from_mp, {"silhouette_points": self.silhouette}),
-        #     ], is_process=self.is_process, maxlen=self.max_queue_size),
-        #     FunctionWrapper("contour analysis", funcs=[
-        #         (pf.create_contours_info, {}),
-        #         (pf.compare_contours_with_prev, {"max_val": 15, "compare_method": pf.Constants.WITH_OVERLAP}),
-        #         (pf.get_mask_from_contours, {"mask_type": pf.Constants.FACE}),
-        #         (pf.create_result_points, {}),
-        #     ], is_process=self.is_process, maxlen=self.max_queue_size),
-        # ]
         self.functions[0].input_queue = self.start_queue
         for i in range(1, len(self.functions)):
             self.functions[i].input_queue = self.functions[i - 1].output_queue
